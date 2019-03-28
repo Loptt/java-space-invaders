@@ -70,7 +70,7 @@ public class Aliens implements Commons {
      * @param item
      * @return 
      */
-    public boolean checkShot(Item item) {
+    public int checkShot(Item item) {
         for (int i = 0; i < aliens.size(); i++) {
             if (aliens.get(i).intersects(item) && !aliens.get(i).isDead()) {
                 //change the destroyed alien as dead
@@ -82,11 +82,11 @@ public class Aliens implements Commons {
                 amountDestroyed++;
                 //play the explosion sound
                 Assets.expSound.play();
-                return true;
+                return i;
             }
         }
         
-        return false;
+        return -1;
     }
 
     /**
@@ -133,6 +133,18 @@ public class Aliens implements Commons {
                 count++;
             }
         }
+    }
+    
+    public void setDead(int i) {
+        //change the destroyed alien as dead
+        aliens.get(i).setDead(true);
+        //change the status as recently dead
+        aliens.get(i).setRecentlyDead(true);
+        aliens.get(i).setRecentlyDeadCounter(0);
+        //increase the counter for destroyed aliens by one
+        amountDestroyed++;
+        //play the explosion sound
+        Assets.expSound.play();
     }
     
     /**

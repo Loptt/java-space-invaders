@@ -49,6 +49,7 @@ public class Game implements Runnable, Commons {
     private int score; //Player score
     
     private NetworkManager network;
+    private NetworkData dataInFrame;
     
     /**
     * to create title, width and height and set the game is still not running
@@ -134,6 +135,8 @@ public class Game implements Runnable, Commons {
         Thread myThread = new Thread(network);
         
         myThread.start();
+        
+        dataInFrame = new NetworkData();
     }
     
     /**
@@ -174,20 +177,8 @@ public class Game implements Runnable, Commons {
                 paused = false;
             }
             return;
-        }
-        
-        network.sendData(new NetworkData(player.getX(), player.getY(), true, player.isRecentShot()));
-        
-        if (network.getReceivedData().isShoot()) {
-            coop.shoot();
-        }
-        
-        
-        
-        coop.setX(network.getReceivedData().getX());
-        coop.setY(network.getReceivedData().getY());
-        keyManager.tick();
-        
+        }        
+    
         //Pause game
         if (keyManager.p) {
             paused = true;
@@ -210,12 +201,32 @@ public class Game implements Runnable, Commons {
         player.tick();
         coop.tick();
         aliens.tick();
+        keyManager.tick();
+        
+         if (network.getReceivedData().isShoot()) {
+            coop.shoot();
+        }
+        
+        coop.setX(network.getReceivedData().getX());
+        coop.setY(network.getReceivedData().getY());
+        
+        if (network.getReceivedData().isAlienShot()) {
+            aliens.setDead(network.getReceivedData().getAlienIndex());
+            coop.getShot().setActive(false);
+            coop.getShot().reset();
+            score += 100;
+        }
+        
+        dataInFrame = new NetworkData(player.getX(), player.getY(), true, player.isRecentShot());
         
         //Check if the shot kills an alien and reset the shot if true
-        if (aliens.checkShot(player.getShot())) {
+        int aIndex = aliens.checkShot(player.getShot());
+        if (aIndex != -1) {
             player.getShot().setActive(false);
             player.getShot().reset();
             score += 100;
+            dataInFrame.setAlienShot(true);
+            dataInFrame.setAlienIndex(aIndex);
         }
         
         //Check if all aliens are dead and end game if true
@@ -235,6 +246,8 @@ public class Game implements Runnable, Commons {
        /* if (aliens.bombIntersects(player)) {
             gameOver = true;
         }*/
+       
+       network.sendData(dataInFrame);
     }
     
     /**
